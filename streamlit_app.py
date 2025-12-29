@@ -17,8 +17,8 @@ session = ctx.session()
 df = session.table("smoothies.public.fruit_options").select("fruit_name", "search_on")
 # st.dataframe(data=df, use_container_width=True)
 pd_df = df.to_pandas();
-st.dataframe(pd_df)
-st.stop()
+#st.dataframe(pd_df)
+#st.stop()
 
 
 name_on_order = st.text_input("Name on smoothies");
