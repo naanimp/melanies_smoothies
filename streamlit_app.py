@@ -1,9 +1,9 @@
 # Import python packages
 import streamlit as st
-from snowflake.snowpark.functions import col,when_matched
+from snowflake.snowpark.functions import col
 
 # Write directly to the app
-st.title(f"Pendind orders:cup_with_straw:")
+st.title(f"Customize Your Smoothie!:cup_with_straw")
 st.write(
   """Choose the fruit  you want in your custom updates.
   """
@@ -12,24 +12,33 @@ st.write(
 ctx = st.connection("snowflake");
 session = ctx.session()
 
-my_dataframe = session.table("smoothies.public.orders").filter(col("ORDER_FILLED")==0).collect()
+# session = get_active_session()
+# df = session.table("smoothies.public.fruit_options").select("fruit_name")
+# st.dataframe(data=df, use_container_width=True)
 
+name_on_order = st.text_input("Name on smoothies");
 
-if my_dataframe:
-    editable_df=st.data_editor(my_dataframe)
-    submitted = st.button("Submit")
+st.write("Name on order Smoothie will be: ", name_on_order);
 
-    if submitted:
-        og_dataset = session.table("smoothies.public.orders")
-        edited_dataset = session.create_dataframe(editable_df)
+ingredient_list = st.multiselect(
+    'Choose upto 5 ingradients', df, max_selections=5
+)
 
-    try:
-        og_dataset.merge(edited_dataset
-                         , (og_dataset['ORDER_UID'] == edited_dataset['ORDER_UID'])
-                         , [when_matched().update({'ORDER_FILLED': edited_dataset['ORDER_FILLED']})]
-                        )
-        st.success('Someone clicked the button', icon = '👍')
-    except:
-        st.write('Something went wrong')
-else:
-    st.success("No more pending orders")
+if ingredient_list:
+    ingredients_string  = ''
+    
+    for x in ingredient_list:
+        ingredients_string += x + " "
+    
+    st.write(ingredients_string)
+    
+    my_insert_stmt = """ insert into smoothies.public.orders(ingredients,name_on_order)
+            values ('""" + ingredients_string + """','""" + name_on_order + """')"""
+
+    st.write(my_insert_stmt)
+    
+    time_to_insert = st.button("Submit order")
+    
+    if time_to_insert:
+        session.sql(my_insert_stmt).collect()
+        st.write("Your smoothies is ordered")
